@@ -22,8 +22,7 @@ app.use(express.static("uploads"))
 
 
 
-
-app.get('/',auth.authenticateToken, (req,res) => {
+app.get('/', (req,res) => {
 res.send('hello world')
 })
 
