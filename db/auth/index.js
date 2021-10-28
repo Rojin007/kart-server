@@ -3,13 +3,11 @@ const crud = require("../crud");//for writiing bacckend code
 const bcrypt = require('bcrypt');//for encryption
 const jwt = require('jsonwebtoken')//token genertion a hash value
 require('dotenv').config()//?
-
+const{ sendOtp }= require("../otp")
 
 const signup = async(usertesting)=> {
 
-    console.log(usertesting)
-    
-    try {
+  
         const salt = await bcrypt.genSalt();
         const hashedpassword = await bcrypt.hash(usertesting.password, salt);
         
@@ -19,16 +17,38 @@ const signup = async(usertesting)=> {
             phone_number:usertesting.phone,
             password:hashedpassword
           }
+          let result = await crud.insertData("users",adduser);
+        
+          if(!result){
+            return({status:false , data: "failed to add user" })
+            
+            }
+          console.log(sendOtp)
+            const otpResponse = await sendOtp(phone)
+            if(!otpResponse.status){
+              return({status:false, data:"failed to send otp"})
+              
+            }
+            const insertedOtpId = await curd.insertData("otps", {
+              otp: otpResponse.otp,
+              phone
+            })
+            if(!insertedOtpId){
+              return({status:false , data: "failed to add user" })
+              
+              }
+            console.log(otpResponse.status);
+            return({status:true, data:"Sign Up success"})
+            }
 
-        let result = await crud.insertData("users",adduser);
-        console.log(result)
-        return {data:"User added Successfully"}
-    }
-    catch{
-        console.log("something went wrong checking")
-        return {data:"error in adding"}
-    }
-}
+       
+//         return {data:"User added Successfully"}
+//     }
+//     catch{
+//         console.log("something went wrong checking")
+//         return {data:"error in adding"}
+//     }
+
 
 
 
@@ -87,7 +107,7 @@ function authenticateToken(req, res, next) {
       console.log(err)//?
       if (err) return res.sendStatus(403)
       console.log(user)
-      req.user = user
+      req.username = user.name
       next()
     })
   }

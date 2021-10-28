@@ -2,7 +2,9 @@ var express = require('express')
 var app = express()
 app.use(express.json());
 const cors =require("cors");
+const crud = require("./db/crud")
 app.use(cors())
+const validator = require('email-validator')
 const port = 5000;
 const auth = require("./db/auth");
 const products = require("./db/products");
@@ -33,6 +35,37 @@ res.send(req.body)
 
 
 app.post('/api/v1/signup', async(req,res) => {
+    const { username, email, phone, password} = req.body
+
+    if( !username || !email || phone.length !== 10 || !Number(phone)){
+      res.send({status:false, data: "Required Fields are empty"})
+      return
+    }
+    
+  if(!validator.validate(email)){
+    res.send({status:false, data: "Invalid Email Address!"})
+    return
+  }
+  const existingUser = await crud.selectData('users', {
+    filteringConditions: [
+        ['user_name', '=', username],
+    ]
+  })
+
+  if(existingUser.length){
+    res.send({status:false, data: "User Already Exists"})
+    return
+  }
+
+  const existingPhone = await crud.selectData('users', {
+    filteringConditions: [
+        ['phone_number', '=', phone],
+    ]
+  })
+  if(existingPhone.length){
+    res.send({status:false, data: "Phone Number Already Exists"})
+    return
+  }
     try {
     const usertesting = req.body
     console.log(req.body)
@@ -44,7 +77,35 @@ app.post('/api/v1/signup', async(req,res) => {
 
   })  
 
-
+  app.post("/api/v1/signup/otp-verification", async(req, res) => {
+    const {phone, otp} = req.body
+    const otpData = await curd.selectData('otps', {
+      fields: [],
+      filteringConditions: [
+          ['phone', '=', phone],
+      ]
+    })
+    if(!otpData.length){
+      res.send({status: false, data:"otp doesn't exist"})
+      return
+    }
+    console.log(otpData[otpData.length - 1].otp, otp)
+    if(otpData[otpData.length-1].otp != otp){
+      res.send({status: false, data: "Wrong Otp"})
+      return
+    }
+    await curd.updateData("users",
+     { fields: {
+       status: true
+     },filteringConditions: [
+       ["phone","=",phone]
+     ] }
+    )
+      res.send({status: true, data:"otp verified"})
+      
+   
+   
+   })
 
 
 app.post('/api/v1/signin', async (req,res) => {
@@ -88,7 +149,8 @@ app.post('/api/v1/signin', async (req,res) => {
 
  
 app.post('/api/v1/searchproducts',auth.authenticateToken, async(req,res) => {
-        const data = req.body                         //product_name
+        const data = req.body.product_name                         //product_name
+        
         const result = await products.searchproducts(data);
         res.send(result)
     })
@@ -97,6 +159,7 @@ app.post('/api/v1/searchproducts',auth.authenticateToken, async(req,res) => {
     
 app.get('/api/v1/viewproducts/:product_id', async(req,res) => {
         const {product_id} = req.params; 
+        console.log(product_id)
         const result = await products.showproducts(product_id);
         const rating = await products.getRating(product_id)
         res.send({...result,rating})
@@ -105,7 +168,7 @@ app.get('/api/v1/viewproducts/:product_id', async(req,res) => {
     
 
 app.get('/api/v1/profile',auth.authenticateToken, async(req,res) => {
-    const id = userid[0].id
+    const id = req.body.id
     // console.log(id);
     result = await userfunction.profile(id)
     res.send(result)
@@ -175,19 +238,19 @@ app.get('/api/v1/chatbox', (req,res) => {
 
 
 app.post('/api/v1/update_username',auth.authenticateToken, async(req,res) => {
-    const data  = {username: req.body.username, id:userid[0].id} 
+    const data  = {username: req.body.username, usrname:req.username} 
     const result = await userfunction.update_username(data);
     res.send(result)
     })
 
 app.post('/api/v1/update_emailid',auth.authenticateToken, async(req,res) => {
-    const data = {email:req.body.email, id:userid[0].id}                                      
+    const data = {email:req.body.email, username:req.username}                                      
     const result = await userfunction.update_email(data);
     res.send(result)                                                             
     })
 
 app.post('/api/v1/update_phone',auth.authenticateToken, async(req,res) => {
-    const data = {phone_no:req.body.phone_no, id:userid[0].id}      
+    const data = {phone_no:req.body.phone_no, username:req.username}      
     const result = await userfunction.update_phno(data)
     res.send(result)
     })

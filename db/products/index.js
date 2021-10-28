@@ -37,7 +37,7 @@ const searchproducts = async(data) =>{
 
        let searchdata = await crud.selectData('products', {
            filteringConditions: [
-               ['product_name', 'LIKE', "%"+data.product_name+"%"]
+               ['product_name', 'LIKE', "%"+data+"%"]
             
            ]
        })

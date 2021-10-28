@@ -8,7 +8,7 @@ let update_user_name = await crud.updateData('users', {
         user_name: data.username
     },
     filteringConditions: [
-        ['user_id', '=', data.id]
+        ['user_name', '=', data.username]
     ]
     
 })
@@ -24,7 +24,7 @@ const update_email = async(data) =>{
             email: data.email
         },
         filteringConditions: [
-            ['user_id', '=', data.id]
+            ['user_name', '=', data.username]
         ]
     })
     return {data:"Updated Successfully"}
@@ -36,7 +36,7 @@ const update_phno = async(data) =>{
             phone_number:data.phone_no
         },
         filteringConditions:[
-            ['user_id', '=',data.id]
+            ['user_name', '=',data.username]
         ]
     })
     return {data:"Updated Succesfully"}
